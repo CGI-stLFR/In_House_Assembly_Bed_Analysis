@@ -1,5 +1,6 @@
 import os
 
+configfile: "config.yaml"
 
 def run_all_files():
     expected_files = []
@@ -18,16 +19,18 @@ def run_all_files():
             file = "Truth_Genome_Coverage_Summary/" + ref + '/' + truth_hap + "/genome_coverage_summary.txt"
             expected_files.append(file)
 
+    return expected_files
+
 
 rule run_all:
     input:
-        run_all_files
+        all_outputs = run_all_files()
 
 
 rule run_minimap_on_samples:
     input:
         fasta = "Assembly/{sample}/contigs_{hap}.fa",
-        ref = lambda wildcards: os.path.realpath(config["ref_files"][wildcards.ref_name])
+        ref = lambda wildcards: os.path.realpath(config["ref_files"][wildcards.ref])
     output:
         "Align_to_Ref/{ref}/{sample}/{hap}/ref_aligns.paf"
     params:
@@ -48,7 +51,7 @@ rule run_minimap_on_samples:
 rule run_minimap_on_truths:
     input:
         fasta = config['truth_dir'] + "chr19_normalized_{truth_hap}.fa",
-        ref = lambda wildcards: os.path.realpath(config["ref_files"][wildcards.ref_name])
+        ref = lambda wildcards: os.path.realpath(config["ref_files"][wildcards.ref])
     output:
         "Align_truth_to_Ref/{ref}/{truth_hap}/ref_aligns.paf"
     params:
@@ -69,7 +72,7 @@ rule run_minimap_on_truths:
 rule get_bed_file_from_paf:
     input:
         paf = "Align_to_Ref/{ref}/{sample}/{hap}/ref_aligns.paf",
-        ref = lambda wildcards: os.path.realpath(config["ref_files"][wildcards.ref_name])
+        ref = lambda wildcards: os.path.realpath(config["ref_files"][wildcards.ref])
     output:
         "Aligns_as_Bed/{ref}/{sample}/{hap}/ref_aligns.bed"
     params:
@@ -81,7 +84,7 @@ rule get_bed_file_from_paf:
 rule get_truth_bed_file_from_paf:
     input:
         paf = "Align_truth_to_Ref/{ref}/{truth_hap}/ref_aligns.paf",
-        ref = lambda wildcards: os.path.realpath(config["ref_files"][wildcards.ref_name])
+        ref = lambda wildcards: os.path.realpath(config["ref_files"][wildcards.ref])
     output:
         "Truth_Aligns_as_Bed/{ref}/{truth_hap}/ref_aligns.bed"
     params:
@@ -115,7 +118,7 @@ rule compress_truth_coverage:
 rule create_bedgraph_genomecov:
     input:
         bed = "Aligns_as_Bed/{ref}/{sample}/{hap}/ref_aligns.bed",
-        ref = lambda wildcards: os.path.realpath(config["ref_files"][wildcards.ref_name])
+        ref = lambda wildcards: os.path.realpath(config["ref_files"][wildcards.ref])
     output:
         "Genome_Coverage/{ref}/{sample}/{hap}/ref_aligns.genome_cov"
     params:
@@ -127,7 +130,7 @@ rule create_bedgraph_genomecov:
 rule create_truth_bedgraph_genomecov:
     input:
         bed = "Truth_Aligns_as_Bed/{ref}/{truth_hap}/ref_aligns.bed",
-        ref = lambda wildcards: os.path.realpath(config["ref_files"][wildcards.ref_name])
+        ref = lambda wildcards: os.path.realpath(config["ref_files"][wildcards.ref])
     output:
         "Truth_Genome_Coverage/{ref}/{truth_hap}/ref_aligns.genome_cov"
     params:
@@ -144,7 +147,7 @@ rule process_genomecov_files:
     run:
         unique_cov = 0
         multi_cov = 0
-        with open(input, 'r') as gc, open(output, 'w') as outf:
+        with open(input[0], 'r') as gc, open(output[0], 'w') as outf:
             for line in gc:
                 parts = line.strip().split()
                 if int(parts[3]) == 1:
@@ -163,7 +166,7 @@ rule process_truth_genomecov_files:
     run:
         unique_cov = 0
         multi_cov = 0
-        with open(input, 'r') as gc, open(output, 'w') as outf:
+        with open(input[0], 'r') as gc, open(output[0], 'w') as outf:
             for line in gc:
                 parts = line.strip().split()
                 if int(parts[3]) == 1:
@@ -183,13 +186,13 @@ rule get_truth_diploid_coverage:
         bedtools = config['bedtools']
     run:
         command = [params.bedtools, "intersect", "-a", input[0], "-b", input[1],
-                   ">", output]
+                   ">", output[0]]
         shell(" ".join(command))
 
 rule get_combined_coverage:
     input:
-        beds = expand("Aligns_as_Bed/{ref}/{sample}/{hap}/ref_aligns.bed", ref="{ref}", sample="{sample}", hap=['0','1'])
-        ref = lambda wildcards: os.path.realpath(config["ref_files"][wildcards.ref_name])
+        beds = expand("Aligns_as_Bed/{ref}/{sample}/{hap}/ref_aligns.bed", ref="{ref}", sample="{sample}", hap=['0','1']),
+        ref = lambda wildcards: os.path.realpath(config["ref_files"][wildcards.ref])
     output:
         "Diploid_Coverage/{ref}/{sample}/diploid_coverage.bed"
     params:
@@ -204,7 +207,7 @@ rule get_combined_coverage:
 
 rule get_truth_regions_without_aligns:
     input:
-        bed = "Diploid_Coverage/{ref}/{sample}/diploid_coverage.bed"
+        bed = "Diploid_Coverage/{ref}/{sample}/diploid_coverage.bed",
         truth = "Truth_Diploid_Coverage/{ref}/diploid_truth_regions.bed"
     output:
         "Unaligned_Truth_Regions/{ref}/{sample}/diploid_truth_regions_no_aligns.bed"
@@ -234,24 +237,22 @@ rule parse_variant_bed:
     run:
         import pandas as pd
 
-        with open(output, 'w') as outf:
+        with open(output[0], 'w') as outf:
 
-            df = pd.read_csv(bed, sep='\t', names = ['Chr', 'Start', 'End', 'Len', 'NVars', 'VarsPerKB'])
+            df = pd.read_csv(input[0], sep='\t', names = ['Chr', 'Start', 'End', 'Len', 'NVars', 'VarsPerKB'])
             print("mean length:\t", df['Len'].mean(), file=outf)
             print("total missing:\t", df['Len'].sum(), file=outf)
 
             tmp_bed_regions = df[df['VarsPerKB'] > 0.5]
+            mean=tmp_bed_regions['Len'].mean()
             print("Sum absent Coverage > 0.5:\t", tmp_bed_regions['Len'].sum(), file=outf)
             print("Percent length:\t", tmp_bed_regions['Len'].sum()/df['Len'].sum(), file=outf)
             print("Mean Length:\t", mean, file=outf)
 
             tmp_bed_regions = df[df['VarsPerKB'] <= 0.5]
+            mean=tmp_bed_regions['Len'].mean()
             print("Sum absent Coverage <= 0.5:\t", tmp_bed_regions['Len'].sum(), file=outf)
             print("Percent length:\t", tmp_bed_regions['Len'].sum()/df['Len'].sum(), file=outf)
             print("Mean Length:\t", mean, file=outf)
 
 
-
-
-# diploid truth regions
-all_alignments_to_hs37d5/truth_hapA_compressed_coverage.bed && all_alignments_to_hs37d5/truth_hapB_compressed_coverage.bed > Unaligned_Truth_Regions/diploid_truth_regions.bed

@@ -1,7 +1,7 @@
 # All samples to evaluate, you can add more as they becom available
 # results will stay if you remove the sample from the list
 samples:
-    []
+    ["In_House_20200915_Unbinned", "Sentieon_PE400"]
 # references to use for evaluation
 # hs37d5 is the only ref we have with genome feature stratification
 ref_files:
@@ -34,4 +34,4 @@ variants_script:
 truth_vcf:
     "research/rv-02/home/eanderson/Sentieon_Stratification_Chr19/test.vcf.gz"
 threads:
-    minimap: 40
+    minimap: 20
