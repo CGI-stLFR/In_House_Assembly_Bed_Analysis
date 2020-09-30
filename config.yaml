@@ -33,5 +33,11 @@ variants_script:
 # path to truth hap VCF
 truth_vcf:
     "research/rv-02/home/eanderson/Sentieon_Stratification_Chr19/test.vcf.gz"
+difficult_regions:
+    {
+    "low_cmp" : "/research/rv-02/home/eanderson/Variant_Analysis_Simulated_de_novo/Bed_Files/LowComplexity/Human_Full_Genome_TRDB_hg19_150331_all_merged_coordonly.bed",
+    "seg_dup" : "/research/rv-02/home/eanderson/Variant_Analysis_Simulated_de_novo/Bed_Files/SegmentalDuplications/hg19_self_chain_split_both_coordonly.bed",
+    "low_map" : "/research/rv-02/home/eanderson/Variant_Analysis_Simulated_de_novo/Bed_Files/mappability/human_g1k_v37_gemmap_l100_m0_e0_nonuniq.sort_coordonly.bed"
+    }
 threads:
     minimap: 20

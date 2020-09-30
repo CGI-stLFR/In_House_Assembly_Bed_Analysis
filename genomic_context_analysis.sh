@@ -1,3 +1,4 @@
+# get intersection of bed files
 bedtools intersect -a Bed_Files/LowComplexity/Human_Full_Genome_TRDB_hg19_150331_all_merged_coordonly.bed \
     -b ../Unaligned_Truth_Regions/diploid_truth_regions_no_aligns_in_house.bed > \
     no_aligns_in_house_lowcmp.bed
@@ -19,6 +20,7 @@ bedtools intersect -a Bed_Files/mappability/human_g1k_v37_gemmap_l100_m0_e0_nonu
     -b ../Unaligned_Truth_Regions/diploid_truth_regions_no_aligns_sentieon.bed > \
     no_aligns_sentieon_lowmap.bed
 
+# get sum of regions
 awk '{sum += $3-$2-1} END {print sum}' no_aligns_in_house_lowcmp.bed > no_aligns_in_house_lowcmp.txt
 awk '{sum += $3-$2-1} END {print sum}' no_aligns_sentieon_lowcmp.bed > no_aligns_sentieon_lowcmp.txt
 awk '{sum += $3-$2-1} END {print sum}' no_aligns_in_house_lowmap.bed > no_aligns_in_house_lowmap.txt
@@ -26,6 +28,7 @@ awk '{sum += $3-$2-1} END {print sum}' no_aligns_sentieon_lowmap.bed > no_aligns
 awk '{sum += $3-$2-1} END {print sum}' no_aligns_in_house_segdup.bed > no_aligns_in_house_segdup.txt
 awk '{sum += $3-$2-1} END {print sum}' no_aligns_sentieon_segdup.bed > no_aligns_sentieon_segdup.txt
 
+# get sum of all regions
 bedtools merge -i <( bedtools sort -i <(cat no_aligns_in_house_lowcmp.bed \
                                          no_aligns_in_house_lowmap.bed \
                                          no_aligns_in_house_segdup.bed) \
@@ -40,7 +43,7 @@ awk '{sum += $3-$2-1} END {print sum}' no_aligns_sentieon_all_merged.bed > no_al
 
 
 
-# Create truth difficult regions 
+# Create truth difficult regions
 # Intersect truth with various difficult regions beds
 bedtools intersect -a ../Unaligned_Truth_Regions/diploid_truth_regions.bed \
     -b Bed_Files/LowComplexity/Human_Full_Genome_TRDB_hg19_150331_all_merged_coordonly.bed \
@@ -120,5 +123,3 @@ bedtools merge -i <( bedtools sort -i <(cat all_sentieon_lowcmp_no_cov.bed \
                                          all_sentieon_segdup_no_cov.bed) \
                         -g /research/rv-02/home/eanderson/Resources_And_DBs/hs37d5.fa.fai) > all_sentieon_difficult_regions_merged_no_cov.bed
 awk '{sum += $3-$2-1} END {print sum}' all_sentieon_difficult_regions_merged_no_cov.bed > all_sentieon_difficult_regions_merged_no_cov.txt
-
-
