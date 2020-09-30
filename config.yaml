@@ -1,0 +1,37 @@
+# All samples to evaluate, you can add more as they becom available
+# results will stay if you remove the sample from the list
+samples:
+    []
+# references to use for evaluation
+# hs37d5 is the only ref we have with genome feature stratification
+ref_files:
+    {
+    "hs37d5" : "/research/rv-02/home/eanderson/Resources_And_DBs/hs37d5.fa"
+    }
+# Where to find inputs, I symlink the `Assembly/` dir for a given assembly here.
+# link binned or unbinned fastas here
+input_dir:
+    "Assembly"
+# Path to mergeScaftig_normalized_hapZ.fa directory
+truth_dir:
+    "/research/rv-02/home/eanderson/Simulated_Data_Wenlan/Simulated_Ref/Fasta/"
+# Path to a tsv with stratification names and files
+stratification_region_tsv:
+    "/home-02/eanderson/Sentieon_Binning_and_Stratification/ga4gh_all_coordonly_2.tsv"
+# Path to the directory containing stratifiation region dirs
+stratification_bed_dir:
+    "/home-02/eanderson/Sentieon_Binning_and_Stratification/stratification_regions"
+# path to minimap2
+minimap2:
+    "/home-02/eanderson/minimap2-2.16_x64-linux/minimap2"
+# path to bedtools
+bedtools:
+    "/opt/cgi-tools/bin/bedtools"
+# path to variant parsing script
+variants_script:
+    "/research/rv-02/home/eanderson/In_House_Assembly_Bed_Analysis/get_variants_for_bed_test.py"
+# path to truth hap VCF
+truth_vcf:
+    "research/rv-02/home/eanderson/Sentieon_Stratification_Chr19/test.vcf.gz"
+threads:
+    minimap: 40
