@@ -7,7 +7,7 @@ def run_all_files():
     expected_files = []
     for ref in config['ref_files']:
         for sample in config['samples']:
-            outfile = "Difficult_Regions_Summary/" + '/' + ref + '/' + sample + "/summary.txt"
+            outfile = "Difficult_Regions_Summary/" + ref + '/' + sample + "/summary.txt"
             expected_files.append(outfile)
             for hap in ['0', '1']:
                 outfile = "Genome_Coverage_Summary/" + ref + '/' + sample + '/' + hap + "/genome_coverage_summary.txt"
@@ -31,6 +31,8 @@ def run_all_files():
 
         for region in config['difficult_regions']:
             outfile = "Diploid_Difficult_Regions/" + ref + '/' + region + "diploid_difficult_regions.bed"
+
+    return expected_files
 
 
 # rule to generate targets
@@ -307,7 +309,7 @@ rule get_covered_difficult_regions:
 # combine all difficult regions without coverage
 rule get_total_difficult_regions_no_cov:
     input:
-        expand("Stratified_Beds/{ref}/{sample}/{region}/difficult_regions_no_aligns.bed", ref="{ref}", sample="{sample}", regions=config['difficult_regions'].keys())
+        expand("Stratified_Beds_No_Aligns/{ref}/{sample}/{region}/missing_difficult_regions.bed", ref="{ref}", sample="{sample}", region=config['difficult_regions'].keys())
     output:
         "Combined_Stratified_Regions_No_Aligns/{ref}/{sample}/combined_no_aligns.bed"
     params:
@@ -322,9 +324,9 @@ rule get_total_difficult_regions_no_cov:
 # combine all difficult regions with coverage
 rule get_total_difficult_regions_w_cov:
     input:
-        expand("Covered_Difficult_Truth_Regions/{ref}/{sample}/{region}/covered_difficult_regions.bed", ref="{ref}", sample="{sample}", regions=config['difficult_regions'].keys())
+        expand("Stratified_Beds_With_Aligns/{ref}/{sample}/{region}/covered_difficult_regions.bed", ref="{ref}", sample="{sample}", region=config['difficult_regions'].keys())
     output:
-        "Combined_Covered_Stratified_Regions/{ref}/{sample}/combined_covered.bed"
+        "Combined_Stratified_Regions_With_Aligns/{ref}/{sample}/combined_covered.bed"
     params:
         bedtools = config['bedtools'],
         ref = lambda wildcards: os.path.realpath(config["ref_files"][wildcards.ref])
@@ -338,9 +340,9 @@ rule get_total_difficult_regions_w_cov:
 # create a summary file
 rule parse_difficult_regions:
     input:
-        ind_covered = expand("Stratified_Beds_With_Aligns/{ref}/{sample}/{region}/covered_difficult_regions.bed", ref="{ref}", sample="{sample}", regions=config['difficult_regions'].keys()),
-        ind_missing = expand("Stratified_Beds_No_Aligns/{ref}/{sample}/{region}/missing_difficult_regions.bed", ref="{ref}", sample="{sample}", regions=config['difficult_regions'].keys()),
-        tot_covered = "Combined_Covered_Stratified_Regions/{ref}/{sample}/combined_covered.bed",
+        ind_covered = expand("Stratified_Beds_With_Aligns/{ref}/{sample}/{region}/covered_difficult_regions.bed", ref="{ref}", sample="{sample}", region=config['difficult_regions'].keys()),
+        ind_missing = expand("Stratified_Beds_No_Aligns/{ref}/{sample}/{region}/missing_difficult_regions.bed", ref="{ref}", sample="{sample}", region=config['difficult_regions'].keys()),
+        tot_covered = "Combined_Stratified_Regions_With_Aligns/{ref}/{sample}/combined_covered.bed",
         tot_missing = "Combined_Stratified_Regions_No_Aligns/{ref}/{sample}/combined_no_aligns.bed"
     output:
         "Difficult_Regions_Summary/{ref}/{sample}/summary.txt"
@@ -349,7 +351,7 @@ rule parse_difficult_regions:
 
 
         ind_covered_results = {}
-        for bedfile in ind_covered:
+        for bedfile in input.ind_covered:
             bed_total = 0
             region = bedfile.split("/")[3]
             with open(bedfile, "r") as bed:
@@ -361,7 +363,7 @@ rule parse_difficult_regions:
 
 
         ind_missing_results = {}
-        for bedfile in ind_missing:
+        for bedfile in input.ind_missing:
             bed_total = 0
             region = bedfile.split("/")[3]
             with open(bedfile, "r") as bed:
@@ -373,19 +375,19 @@ rule parse_difficult_regions:
 
 
         tot_covered_results = 0
-        with open(tot_covered, "r") as bed:
+        with open(input.tot_covered, "r") as bed:
             for line in bed:
                 parts = line.split()
                 tot_covered_results = int(parts[2]) - int(parts[1]) - 1
 
 
         tot_missing_results = 0
-        with open(tot_missing, "r") as bed:
+        with open(input.tot_missing, "r") as bed:
             for line in bed:
                 parts = line.split()
                 tot_missing_results = int(parts[2]) - int(parts[1]) - 1
 
-        with open(outfile, "w") as outf:
+        with open(output[0], "w") as outf:
             print("Total Covered Difficult Regions:", file=outf)
             print(tot_covered_results, file=outf)
 
